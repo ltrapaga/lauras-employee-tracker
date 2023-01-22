@@ -24,3 +24,5 @@ VALUES ('John', 'Doe', 1, null),
        ('Malia', 'Brown', 6, 5),
        ('Sarah', 'Lourd', 7, null),
        ('Calvin', 'Chern', 8, 7);
+
+-- TO DO: Add none/null option to prompt function in index.js
