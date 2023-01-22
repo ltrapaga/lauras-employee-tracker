@@ -1,11 +1,12 @@
-DROP DATABASE IF EXISTS movies_db;
-CREATE DATABASE movies_db;
+DROP DATABASE IF EXISTS tracker_db;
+CREATE DATABASE tracker_db;
 
-USE movies_db;
+USE tracker_db;
 
 CREATE TABLE department (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   department_name VARCHAR(30) NOT NULL
+  ON DELETE SET NULL
 );
 
 CREATE TABLE role (
@@ -15,6 +16,7 @@ CREATE TABLE role (
     department_id INT,
     FOREIGN KEY (department_id)
     REFERENCES departments(id)
+    ON DELETE SET NULL
 );
 
 CREATE TABLE employee (
@@ -23,8 +25,9 @@ CREATE TABLE employee (
     last_name VARCHAR(30) NOT NULL,
     role_id INT,
     manager_id INT,
-    FOREIGN KEY (role_id),
-    REFERENCES role(id),
+    FOREIGN KEY (role_id)
+    REFERENCES role(id)
+    ON DELETE SET NULL
     --TO DO: Link manager ID to employee ID
 );
 
