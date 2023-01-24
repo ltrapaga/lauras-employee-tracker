@@ -27,5 +27,14 @@ const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const consoleTable = require('console');
 
-
+// Connect to database
+const trackerDatabase = mysql.createConnection(
+    {
+        host: "localhost",
+        user: "root",
+        password: "SswUfu*Esuub3!.",
+        database: "tracker_db"
+    },
+    console.log("Connected to the tracker_db database.")
+);
 
