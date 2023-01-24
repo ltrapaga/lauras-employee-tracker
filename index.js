@@ -38,3 +38,4 @@ const trackerDatabase = mysql.createConnection(
     console.log("Connected to the tracker_db database.")
 );
 
+
