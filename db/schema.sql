@@ -15,7 +15,7 @@ CREATE TABLE role (
     salary DECIMAL NOT NULL,
     department_id INT,
     FOREIGN KEY (department_id)
-    REFERENCES departments(id)
+    REFERENCES department(id)
     ON DELETE SET NULL
 );
 
@@ -29,5 +29,8 @@ CREATE TABLE employee (
     REFERENCES role(id)
     ON DELETE SET NULL
     --TO DO: Link manager ID to employee ID
+    FOREIGN KEY (manager_id)
+    REFERENCES employee(id)
+    ON DELETE SET NULL
 );
 

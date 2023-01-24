@@ -23,10 +23,8 @@
         // Quit
 
 // Imports node_modules
-const express = require('express');
 const inquirer = require('inquirer');
-const mySql = require('mysql2');
-const fs = require('fs');
+const mysql = require('mysql2');
 const consoleTable = require('console');
 
 
