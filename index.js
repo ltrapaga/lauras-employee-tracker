@@ -38,7 +38,7 @@ const trackerDatabase = mysql.createConnection(
   console.log("Connected to the tracker_db database.")
 );
 
-const employeePrompt = () => {
+const initalPrompt = () => {
   // Initializes inquirer
   inquirer
     .prompt([
@@ -68,13 +68,19 @@ const employeePrompt = () => {
     .then((res) => {
       switch (res.choice) {
         case "View all departments":
-          viewAll("DEPARTMENT");
+          viewAllDepartments();
           break;
         case "View all roles":
-          viewAll("ROLE");
+          viewAllRoles();
           break;
         case "View all employees":
-          viewAll("EMPLOYEE");
+          viewAllEmployees();
+          break;
+        case "View employees by department":
+          viewEmployeeByDepartment();
+          break;
+        case "View employees by manager":
+          viewEmployeesByManager();
           break;
         case "Add department":
           addDepartment();
@@ -87,12 +93,6 @@ const employeePrompt = () => {
           break;
         case "Update employee role":
           updateRole();
-          break;
-        case "View employees by department":
-          viewEmployeeByDepartment();
-          break;
-        case "View employees by manager":
-          viewEmployeesByManager();
           break;
         case "Update employee managers":
           updateManagers();
@@ -115,5 +115,41 @@ const employeePrompt = () => {
     })
     .catch((err) => {
       console.error(err);
-    })
+    });
+};
+
+const viewAllDepartments = () => {
+  const query = `SELECT * FROM department`;
+  trackerDatabase.query(query, (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    initalPrompt();
+  });
+};
+
+const viewAllRoles = () => {
+  const query = `
+    SELECT r.id AS id, title, salary, d.name AS department
+    FROM role AS r 
+    LEFT JOIN department AS d ON r.department_id = d.id`;
+  trackerDatabase.query(query, (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    initalPrompt();
+  });
+};
+
+const viewAllEmployees = () => {
+  const query = `
+    SELECT e.id AS id, e.first_name AS first_name, e.last_name AS last_name, 
+    r.title AS role, d.name AS department, CONCAT(m.first_name, " ", m.last_name) AS manager
+    FROM employee AS e 
+    LEFT JOIN role AS r ON e.role_id = r.id
+    LEFT JOIN department AS d ON r.department_id = d.id
+    LEFT JOIN employee AS m ON e.manager_id = m.id`;
+  trackerDatabase.query(query, (err, res) => {
+    if (err) throw err;
+    console.table(res);
+    initalPrompt();
+  });
 };
