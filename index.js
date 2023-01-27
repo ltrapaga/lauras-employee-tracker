@@ -38,7 +38,7 @@ const trackerDatabase = mysql.createConnection(
   console.log("Connected to the tracker_db database.")
 );
 
-const initalPrompt = () => {
+const initialPrompt = () => {
   // Initializes inquirer
   inquirer
     .prompt([
@@ -46,6 +46,7 @@ const initalPrompt = () => {
         type: "list",
         name: "menu",
         message: "What would you like to do?",
+        loop: false,
         choices: [
           "View all departments",
           "View all roles",
@@ -66,7 +67,7 @@ const initalPrompt = () => {
       },
     ])
     .then((res) => {
-      switch (res.choice) {
+      switch (res.menu) {
         case "View all departments":
           viewAllDepartments();
           break;
@@ -118,38 +119,114 @@ const initalPrompt = () => {
     });
 };
 
+initialPrompt();
+
 const viewAllDepartments = () => {
-  const query = `SELECT * FROM department`;
+  const query = `SELECT * FROM department;`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
-    initalPrompt();
+    initialPrompt();
   });
 };
 
 const viewAllRoles = () => {
   const query = `
-    SELECT r.id AS id, title, salary, d.name AS department
-    FROM role AS r 
-    LEFT JOIN department AS d ON r.department_id = d.id`;
+  SELECT * FROM role 
+  JOIN department ON role.department_id = department.id;`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
-    initalPrompt();
+    initialPrompt();
   });
 };
 
 const viewAllEmployees = () => {
   const query = `
-    SELECT e.id AS id, e.first_name AS first_name, e.last_name AS last_name, 
-    r.title AS role, d.name AS department, CONCAT(m.first_name, " ", m.last_name) AS manager
-    FROM employee AS e 
-    LEFT JOIN role AS r ON e.role_id = r.id
-    LEFT JOIN department AS d ON r.department_id = d.id
-    LEFT JOIN employee AS m ON e.manager_id = m.id`;
+  SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee_name, role.title, role.salary, department.department_name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name 
+  FROM employee 
+  JOIN role ON employee.role_id = role.id 
+  LEFT JOIN department ON role.department_id = department.id 
+  LEFT JOIN employee manager ON manager.id = employee.manager_id;`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
-    initalPrompt();
+    initialPrompt();
+  });
+};
+
+const addEmployee = () => {
+  trackerDatabase.query(`SELECT * FROM employee`, (err, employeeRes) => {
+    if (err) throw err;
+    const employeeOptions = [
+      {
+        name: "None",
+        value: 0,
+      },
+    ];
+
+    employeeRes.forEach(({ first_name, last_name, id }) => {
+      employeeOptions.push({
+        name: first_name + " " + last_name,
+        value: id,
+      });
+    });
+
+    trackerDatabase.query(`SELECT * FROM role`, (err, roleRes) => {
+      if (err) throw err;
+      const roleOptions = [];
+      roleRes.forEach(({ title, id }) => {
+        roleOptions.push({
+          name: title,
+          value: id,
+        });
+      });
+
+      let employeeQuestions = [
+        {
+          type: "input",
+          name: "first_name",
+          message: "What is the employee's first name?",
+        },
+        {
+          type: "input",
+          name: "last_name",
+          message: "What is the employee's last name?",
+        },
+        {
+          type: "list",
+          name: "role_id",
+          choices: roleOptions,
+          message: "What is the employee's role?",
+        },
+        {
+          type: "list",
+          name: "manager_id",
+          choices: employeeOptions,
+          message: "Who is the employee's manager?",
+        },
+      ];
+
+      inquirer
+        .prompt(employeeQuestions)
+        .then((res) => {
+          const newEmployeeQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)`;
+          let manager_id = res.manager_id !== 0 ? res.manager_id : null;
+          trackerDatabase.query(
+            newEmployeeQuery,
+            [[res.first_name, res.last_name, res.role_id, manager_id]],
+            (err, res) => {
+              if (err) throw err;
+              console.log(
+                `Successfully inserted employee ${res.first_name} ${res.last_name} with id ${res.insertId}`
+              );
+              initialPrompt();
+            }
+          );
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
   });
 };

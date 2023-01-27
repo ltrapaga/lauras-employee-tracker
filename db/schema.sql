@@ -6,7 +6,6 @@ USE tracker_db;
 CREATE TABLE department (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   department_name VARCHAR(30) NOT NULL
-  ON DELETE SET NULL
 );
 
 CREATE TABLE role (
@@ -27,8 +26,7 @@ CREATE TABLE employee (
     manager_id INT,
     FOREIGN KEY (role_id)
     REFERENCES role(id)
-    ON DELETE SET NULL
-    --TO DO: Link manager ID to employee ID
+    ON DELETE SET NULL,
     FOREIGN KEY (manager_id)
     REFERENCES employee(id)
     ON DELETE SET NULL
