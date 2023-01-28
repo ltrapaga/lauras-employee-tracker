@@ -1,27 +1,3 @@
-// Prompts:
-// 1. What would you like to do?
-// Select:
-// View all employees (Shows pertinent table)
-// Update employee role
-// Which employee's role do you want to update? (Select from list of current employees)
-// Which role do you want to assign the selected employee? (Select from list of current roles ----> takes back to question 1)
-// Add employee
-// What is the employee's first name? (Input)
-// What is the employee's last name? (Input)
-// What is the employee's role? (Select from list of current roles)
-// Who is the employee's manager? (Select from list of current employees or none ----> takes back to question 1)
-
-// View all roles (Shows pertinent table)
-// Add role
-// What is the name of the role? (Input)
-// What is the salary of the role? (Input)
-// Which department does the role belong to? (Select from list of current departments ----> takes back to question 1)
-
-// View all departmets (Shows pertinent table)
-// Add department
-// What is the name of the department? (Input ----> takes back to question 1)
-// Quit
-
 // Imports node_modules
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
@@ -130,10 +106,18 @@ const viewAllDepartments = () => {
   });
 };
 
+// TODO: Remove the (index) column from console tables
+
+
 const viewAllRoles = () => {
   const query = `
-  SELECT * FROM role 
-  JOIN department ON role.department_id = department.id;`;
+    SELECT title, role.id, salary, department.department_name AS department
+    FROM role 
+    LEFT JOIN department ON role.department_id = department.id;`;
+  
+  // `
+  // SELECT * FROM role 
+  // JOIN department ON role.department_id = department.id;`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
@@ -141,10 +125,11 @@ const viewAllRoles = () => {
   });
 };
 
+// TODO: Get id's to display in ascending order. Tried - ORDER BY employee.id ASC - throws error
 const viewAllEmployees = () => {
   const query = `
   SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee_name, role.title, role.salary, department.department_name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name 
-  FROM employee 
+  FROM employee
   JOIN role ON employee.role_id = role.id 
   LEFT JOIN department ON role.department_id = department.id 
   LEFT JOIN employee manager ON manager.id = employee.manager_id;`;
