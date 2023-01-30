@@ -345,17 +345,53 @@ const updateRole = () => {
   });
 };
 
+const deleteDepartment = () => {
+  const deleteDepartmentArr = [];
+  connection.query(`SELECT * FROM department`, (err, departmentRes) => {
+    if (err) throw err;
+    departmentRes.forEach(department => {
+      let deleteDepartmentObj = 
+        {
+          name: department.name,
+          value: department.id
+        }
+    deleteDepartmentArr.push(deleteDepartmentObj);
+    });
+    let deleteDepartmentQuestion = [
+      {
+        type: "list",
+        name: "id",
+        choices: deleteDepartmentArr,
+        message: "Which department do you want to delete?"
+      }
+    ];
+    inquirer.prompt(deleteDepartmentQuestion)
+    .then(deleteDepartmentRes => {
+      const deleteDepartmentQuery = `DELETE FROM DEPARTMENT WHERE id = ?`;
+      connection.query(deleteDepartmentQuery, [deleteDepartmentRes.id], (err, res) => {
+        if (err) throw err;
+        console.log(`Department deleted`);
+        startPrompt();
+      });
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  });
+};
+
 const deleteRole = () => {
   trackerDatabase.query(`SELECT * FROM role`, (err, roleRes) => {
     if (err) throw err;
     const deleteRoleArr = [];
     roleRes.forEach(({ title, id }) => {
-      deleteRoleArr.push({
+      deleteRoleArr.push(
+        {
         name: title,
         value: id,
-      });
+        }
+      );
     });
-
     let deleteRoleQuestion = [
       {
         type: "list",
@@ -364,12 +400,11 @@ const deleteRole = () => {
         message: "What role do you want to delete?",
       },
     ];
-
     inquirer
       .prompt(deleteRoleQuestion)
       .then((deleteRoleRes) => {
-        const query = `DELETE FROM role WHERE id = ?`;
-        trackerDatabase.query(query, [deleteRoleRes.role_id], (err, res) => {
+        const deleteRoleQuery = `DELETE FROM role WHERE id = ?`;
+        trackerDatabase.query(deleteRoleQuery, [deleteRoleRes.role_id], (err, res) => {
           if (err?.code === "ER_ROW_IS_REFERENCED_2") {
             console.log(
               "Can't delete role because an employee currently has that role"
@@ -379,7 +414,7 @@ const deleteRole = () => {
           } else if (err) {
             throw err;
           }
-          console.log("successfully updated employee's role!");
+          console.log("Employee role updated");
           initialPrompt();
         });
       })
@@ -419,6 +454,46 @@ const deleteEmployee = () => {
             initialPrompt();
           }
         );
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
+};
+
+const viewDepartmentBudget = () => {
+  trackerDatabase.query("SELECT * FROM department", (err, departmentRes) => {
+    if (err) throw err;
+
+    const departmentBudgetArr = [];
+    departmentRes.forEach(({ department_name, id }) => {
+      departmentBudgetArr.push({
+        name: department_name,
+        value: id,
+      });
+    });
+    let budgetQuestion = [
+      {
+        type: "list",
+        name: "id",
+        choices: departmentBudgetArr,
+        message: "Which department's total utilized budget would you like to view?",
+      },
+    ];
+    inquirer
+      .prompt(budgetQuestion)
+      .then((departmentBudgetRes) => {
+        const budgetQuery = `
+          SELECT department.department_name, COALESCE(sum(salary), 0) AS budget
+          FROM department
+          LEFT JOIN role r ON r.department_id = department.id 
+          LEFT JOIN employee ON employee.role_id = r.id
+          WHERE department.id = ?`;
+        trackerDatabase.query(budgetQuery, [departmentBudgetRes.id], (err, res) => {
+          if (err) throw err;
+          console.table(res);
+          initialPrompt();
+        });
       })
       .catch((err) => {
         console.error(err);
