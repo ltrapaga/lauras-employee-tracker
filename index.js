@@ -15,7 +15,6 @@ const trackerDatabase = mysql.createConnection(
 );
 
 const initialPrompt = () => {
-  // Initializes inquirer
   inquirer
     .prompt([
       {
@@ -42,8 +41,8 @@ const initialPrompt = () => {
         ],
       },
     ])
-    .then((res) => {
-      switch (res.menu) {
+    .then((initialPromptRes) => {
+      switch (initialPromptRes.menu) {
         case "View all departments":
           viewAllDepartments();
           break;
