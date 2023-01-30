@@ -1,7 +1,7 @@
 // Imports node_modules
 const inquirer = require("inquirer");
 const mysql = require("mysql2");
-const consoleTable = require("console");
+const consoleTable = require("console.table");
 
 // Connect to database
 const trackerDatabase = mysql.createConnection(
@@ -37,7 +37,7 @@ const initialPrompt = () => {
           "Delete department",
           "Delete role",
           "Delete employee",
-          "View the combined salaries of all employees in a department",
+          "View the total utilized budget of a department",
           "Quit",
         ],
       },
@@ -83,8 +83,8 @@ const initialPrompt = () => {
         case "Delete employee":
           deleteEmployee();
           break;
-        case "View the combined salaries of all employees in a department":
-          viewDepartmentSalaries();
+        case "View the total utilized budget of a department":
+          viewDepartmentBudget();
           break;
         default:
           trackerDatabase.end();
@@ -98,8 +98,10 @@ const initialPrompt = () => {
 initialPrompt();
 
 const viewAllDepartments = () => {
-  const query = `SELECT * FROM department`;
-  trackerDatabase.query(query, (err, res) => {
+  const viewDepartmentsQuery = `
+    SELECT * 
+    FROM department`;
+  trackerDatabase.query(viewDepartmentsQuery, (err, res) => {
     if (err) throw err;
     console.table(res);
     initialPrompt();
@@ -107,12 +109,11 @@ const viewAllDepartments = () => {
 };
 
 const viewAllRoles = () => {
-  const query = `
+  const viewRolesQuery = `
     SELECT title, role.id, salary, department.department_name AS department
     FROM role 
     LEFT JOIN department ON role.department_id = department.id`;
-
-  trackerDatabase.query(query, (err, res) => {
+  trackerDatabase.query(viewRolesQuery, (err, res) => {
     if (err) throw err;
     console.table(res);
     initialPrompt();
@@ -120,14 +121,14 @@ const viewAllRoles = () => {
 };
 
 const viewAllEmployees = () => {
-  const query = `
-  SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee_name, role.title, role.salary, department.department_name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name 
-  FROM employee
-  JOIN role ON employee.role_id = role.id 
-  LEFT JOIN department ON role.department_id = department.id 
-  LEFT JOIN employee manager ON manager.id = employee.manager_id
-  ORDER BY employee.id ASC`;
-  trackerDatabase.query(query, (err, res) => {
+  const viewEmployeesQuery = `
+    SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee_name, role.title, role.salary, department.department_name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name 
+    FROM employee
+    JOIN role ON employee.role_id = role.id 
+    LEFT JOIN department ON role.department_id = department.id 
+    LEFT JOIN employee manager ON manager.id = employee.manager_id
+    ORDER BY employee.id ASC`;
+  trackerDatabase.query(viewEmployeesQuery, (err, res) => {
     if (err) throw err;
     console.table(res);
     initialPrompt();
@@ -142,13 +143,13 @@ const addDepartment = () => {
       message: "What is the name of the department?",
     },
   ];
-
   inquirer
     .prompt(departmentQuestion)
     .then((res) => {
-      const query = `INSERT INTO department (department_name) VALUES (?)`;
+      const newDepartmentQuery = `
+        INSERT INTO department (department_name) VALUES (?)`;
       trackerDatabase.query(
-        query,
+        newDepartmentQuery,
         [[res.department_name]],
         (err, newDepartmentRes) => {
           if (err) throw err;
@@ -164,6 +165,58 @@ const addDepartment = () => {
     });
 };
 
+const addRole = () => {
+  const departmentsArr = [];
+  trackerDatabase.query(`SELECT * FROM department`, (err, departmentRes) => {
+    if (err) throw err;
+    departmentRes.forEach((department) => {
+      let departmentsData = {
+        name: department.department_name,
+        value: department.id,
+      };
+      departmentsArr.push(departmentsData);
+    });
+    let roleQuestions = [
+      {
+        type: "input",
+        name: "title",
+        message: "What is the title of the new role?",
+      },
+      {
+        type: "input",
+        name: "salary",
+        message: "What is the salary of the new role?",
+      },
+      {
+        type: "list",
+        name: "department",
+        choices: departmentsArr,
+        message: "What department is the new role in?",
+      },
+    ];
+    inquirer
+      .prompt(roleQuestions)
+      .then((res) => {
+        const newRoleQuery = `
+        INSERT INTO role (title, salary, department_id) VALUES (?)`;
+        trackerDatabase.query(
+          newRoleQuery,
+          [[res.title, res.salary, res.department]],
+          (err, newRoleRes) => {
+            if (err) throw err;
+            console.log(
+              `Successfully inserted ${res.title} role at id ${newRoleRes.insertId}`
+            );
+            initialPrompt();
+          }
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
+};
+
 const addEmployee = () => {
   trackerDatabase.query(`SELECT * FROM employee`, (err, employeeRes) => {
     if (err) throw err;
@@ -173,14 +226,12 @@ const addEmployee = () => {
         value: 0,
       },
     ];
-
     employeeRes.forEach(({ first_name, last_name, id }) => {
       employeeOptions.push({
         name: first_name + " " + last_name,
         value: id,
       });
     });
-
     trackerDatabase.query(`SELECT * FROM role`, (err, roleRes) => {
       if (err) throw err;
       const roleOptions = [];
@@ -190,7 +241,6 @@ const addEmployee = () => {
           value: id,
         });
       });
-
       let employeeQuestions = [
         {
           type: "input",
@@ -215,11 +265,11 @@ const addEmployee = () => {
           message: "Who is the employee's manager?",
         },
       ];
-
       inquirer
         .prompt(employeeQuestions)
         .then((res) => {
-          const newEmployeeQuery = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)`;
+          const newEmployeeQuery = `
+            INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?)`;
           let manager_id = res.manager_id !== 0 ? res.manager_id : null;
           trackerDatabase.query(
             newEmployeeQuery,
@@ -229,7 +279,6 @@ const addEmployee = () => {
               console.log(
                 `${res.first_name} ${res.last_name} added to the database with id ${newEmployeeRes.insertId}`
               );
-
               initialPrompt();
             }
           );
@@ -242,54 +291,49 @@ const addEmployee = () => {
 };
 
 const updateRole = () => {
-  //get all the employee list
-  trackerDatabase.query("SELECT * FROM EMPLOYEE", (err, emplRes) => {
+  trackerDatabase.query(`SELECT * FROM employee`, (err, employeeRes) => {
     if (err) throw err;
-    const employeeChoice = [];
-    emplRes.forEach(({ first_name, last_name, id }) => {
-      employeeChoice.push({
+    const employeeArr = [];
+    employeeRes.forEach(({ first_name, last_name, id }) => {
+      employeeArr.push({
         name: first_name + " " + last_name,
         value: id,
       });
     });
-
-    //get all the role list to make choice of employee's role
-    trackerDatabase.query("SELECT * FROM ROLE", (err, rolRes) => {
+    trackerDatabase.query(`SELECT * FROM role`, (err, roleRes) => {
       if (err) throw err;
-      const roleChoice = [];
-      rolRes.forEach(({ title, id }) => {
-        roleChoice.push({
+      const updateRoleArr = [];
+      roleRes.forEach(({ title, id }) => {
+        updateRoleArr.push({
           name: title,
           value: id,
         });
       });
-
-      let questions = [
+      let updateRoleQuestions = [
         {
           type: "list",
           name: "id",
-          choices: employeeChoice,
-          message: "whose role do you want to update?",
+          choices: employeeArr,
+          message: "Whose role do you want to update?",
         },
         {
           type: "list",
           name: "role_id",
-          choices: roleChoice,
-          message: "what is the employee's new role?",
+          choices: updateRoleArr,
+          message: "What is the employee's new role?",
         },
       ];
 
       inquirer
-        .prompt(questions)
-        .then((response) => {
-          const query = `UPDATE EMPLOYEE SET role_id = ? WHERE id = ?;`;
+        .prompt(updateRoleQuestions)
+        .then((updateRoleRes) => {
+          const updateRoleQuery = `UPDATE employee SET role_id = ? WHERE id = ?`;
           trackerDatabase.query(
-            query,
-            [response.role_id, response.id],
+            updateRoleQuery,
+            [updateRoleRes.role_id, updateRoleRes.id],
             (err, res) => {
               if (err) throw err;
-
-              console.log("successfully updated employee's role!");
+              console.log("Employee role updated");
               initialPrompt();
             }
           );
@@ -301,47 +345,3 @@ const updateRole = () => {
   });
 };
 
-const deleteRole = () => {
-  // get all the role list to make choice of employee's role
-  trackerDatabase.query("SELECT * FROM ROLE", (err, rolRes) => {
-    if (err) throw err;
-    const roleChoice = [];
-    rolRes.forEach(({ title, id }) => {
-      roleChoice.push({
-        name: title,
-        value: id,
-      });
-    });
-
-    let questions = [
-      {
-        type: "list",
-        name: "role_id",
-        choices: roleChoice,
-        message: "What role do you want to delete?",
-      },
-    ];
-
-    inquirer
-      .prompt(questions)
-      .then((response) => {
-        const query = `DELETE FROM role WHERE id = ?;`;
-        trackerDatabase.query(query, [response.role_id], (err, res) => {
-          if (err?.code === "ER_ROW_IS_REFERENCED_2") {
-            console.log(
-              "Can't delete role because an employee currently has that role"
-            );
-            initialPrompt();
-            return;
-          } else if (err) {
-            throw err;
-          }
-          console.log("successfully updated employee's role!");
-          initialPrompt();
-        });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  });
-};
