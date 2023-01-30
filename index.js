@@ -98,26 +98,20 @@ const initialPrompt = () => {
 initialPrompt();
 
 const viewAllDepartments = () => {
-  const query = `SELECT * FROM department;`;
+  const query = `SELECT * FROM department`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
     initialPrompt();
   });
 };
-
-// TODO: Remove the (index) column from console tables
-
 
 const viewAllRoles = () => {
   const query = `
     SELECT title, role.id, salary, department.department_name AS department
     FROM role 
-    LEFT JOIN department ON role.department_id = department.id;`;
-  
-  // `
-  // SELECT * FROM role 
-  // JOIN department ON role.department_id = department.id;`;
+    LEFT JOIN department ON role.department_id = department.id`;
+
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
@@ -125,19 +119,49 @@ const viewAllRoles = () => {
   });
 };
 
-// TODO: Get id's to display in ascending order. Tried - ORDER BY employee.id ASC - throws error
 const viewAllEmployees = () => {
   const query = `
   SELECT employee.id, CONCAT(employee.first_name, ' ', employee.last_name) AS employee_name, role.title, role.salary, department.department_name AS department, CONCAT(manager.first_name, ' ', manager.last_name) AS manager_name 
   FROM employee
   JOIN role ON employee.role_id = role.id 
   LEFT JOIN department ON role.department_id = department.id 
-  LEFT JOIN employee manager ON manager.id = employee.manager_id;`;
+  LEFT JOIN employee manager ON manager.id = employee.manager_id
+  ORDER BY employee.id ASC`;
   trackerDatabase.query(query, (err, res) => {
     if (err) throw err;
     console.table(res);
     initialPrompt();
   });
+};
+
+const addDepartment = () => {
+  let departmentQuestion = [
+    {
+      type: "input",
+      name: "department_name",
+      message: "What is the name of the department?",
+    },
+  ];
+
+  inquirer
+    .prompt(departmentQuestion)
+    .then((res) => {
+      const query = `INSERT INTO department (department_name) VALUES (?)`;
+      trackerDatabase.query(
+        query,
+        [[res.department_name]],
+        (err, newDepartmentRes) => {
+          if (err) throw err;
+          console.log(
+            `${res.department_name} department added to the database at id ${newDepartmentRes.insertId}`
+          );
+          initialPrompt();
+        }
+      );
+    })
+    .catch((err) => {
+      console.error(err);
+    });
 };
 
 const addEmployee = () => {
@@ -200,11 +224,12 @@ const addEmployee = () => {
           trackerDatabase.query(
             newEmployeeQuery,
             [[res.first_name, res.last_name, res.role_id, manager_id]],
-            (err, res) => {
+            (err, newEmployeeRes) => {
               if (err) throw err;
               console.log(
-                `Successfully inserted employee ${res.first_name} ${res.last_name} with id ${res.insertId}`
+                `${res.first_name} ${res.last_name} added to the database with id ${newEmployeeRes.insertId}`
               );
+
               initialPrompt();
             }
           );
@@ -213,5 +238,110 @@ const addEmployee = () => {
           console.error(err);
         });
     });
+  });
+};
+
+const updateRole = () => {
+  //get all the employee list
+  trackerDatabase.query("SELECT * FROM EMPLOYEE", (err, emplRes) => {
+    if (err) throw err;
+    const employeeChoice = [];
+    emplRes.forEach(({ first_name, last_name, id }) => {
+      employeeChoice.push({
+        name: first_name + " " + last_name,
+        value: id,
+      });
+    });
+
+    //get all the role list to make choice of employee's role
+    trackerDatabase.query("SELECT * FROM ROLE", (err, rolRes) => {
+      if (err) throw err;
+      const roleChoice = [];
+      rolRes.forEach(({ title, id }) => {
+        roleChoice.push({
+          name: title,
+          value: id,
+        });
+      });
+
+      let questions = [
+        {
+          type: "list",
+          name: "id",
+          choices: employeeChoice,
+          message: "whose role do you want to update?",
+        },
+        {
+          type: "list",
+          name: "role_id",
+          choices: roleChoice,
+          message: "what is the employee's new role?",
+        },
+      ];
+
+      inquirer
+        .prompt(questions)
+        .then((response) => {
+          const query = `UPDATE EMPLOYEE SET role_id = ? WHERE id = ?;`;
+          trackerDatabase.query(
+            query,
+            [response.role_id, response.id],
+            (err, res) => {
+              if (err) throw err;
+
+              console.log("successfully updated employee's role!");
+              initialPrompt();
+            }
+          );
+        })
+        .catch((err) => {
+          console.error(err);
+        });
+    });
+  });
+};
+
+const deleteRole = () => {
+  // get all the role list to make choice of employee's role
+  trackerDatabase.query("SELECT * FROM ROLE", (err, rolRes) => {
+    if (err) throw err;
+    const roleChoice = [];
+    rolRes.forEach(({ title, id }) => {
+      roleChoice.push({
+        name: title,
+        value: id,
+      });
+    });
+
+    let questions = [
+      {
+        type: "list",
+        name: "role_id",
+        choices: roleChoice,
+        message: "What role do you want to delete?",
+      },
+    ];
+
+    inquirer
+      .prompt(questions)
+      .then((response) => {
+        const query = `DELETE FROM role WHERE id = ?;`;
+        trackerDatabase.query(query, [response.role_id], (err, res) => {
+          if (err?.code === "ER_ROW_IS_REFERENCED_2") {
+            console.log(
+              "Can't delete role because an employee currently has that role"
+            );
+            initialPrompt();
+            return;
+          } else if (err) {
+            throw err;
+          }
+          console.log("successfully updated employee's role!");
+          initialPrompt();
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   });
 };
