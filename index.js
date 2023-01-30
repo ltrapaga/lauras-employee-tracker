@@ -464,13 +464,14 @@ const deleteEmployee = () => {
 const viewDepartmentBudget = () => {
   trackerDatabase.query("SELECT * FROM department", (err, departmentRes) => {
     if (err) throw err;
-
     const departmentBudgetArr = [];
     departmentRes.forEach(({ department_name, id }) => {
-      departmentBudgetArr.push({
+      departmentBudgetArr.push(
+        {
         name: department_name,
         value: id,
-      });
+        }
+      );
     });
     let budgetQuestion = [
       {
@@ -500,3 +501,5 @@ const viewDepartmentBudget = () => {
       });
   });
 };
+
+
