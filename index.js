@@ -345,3 +345,83 @@ const updateRole = () => {
   });
 };
 
+const deleteRole = () => {
+  trackerDatabase.query(`SELECT * FROM role`, (err, roleRes) => {
+    if (err) throw err;
+    const deleteRoleArr = [];
+    roleRes.forEach(({ title, id }) => {
+      deleteRoleArr.push({
+        name: title,
+        value: id,
+      });
+    });
+
+    let deleteRoleQuestion = [
+      {
+        type: "list",
+        name: "role_id",
+        choices: deleteRoleArr,
+        message: "What role do you want to delete?",
+      },
+    ];
+
+    inquirer
+      .prompt(deleteRoleQuestion)
+      .then((deleteRoleRes) => {
+        const query = `DELETE FROM role WHERE id = ?`;
+        trackerDatabase.query(query, [deleteRoleRes.role_id], (err, res) => {
+          if (err?.code === "ER_ROW_IS_REFERENCED_2") {
+            console.log(
+              "Can't delete role because an employee currently has that role"
+            );
+            initialPrompt();
+            return;
+          } else if (err) {
+            throw err;
+          }
+          console.log("successfully updated employee's role!");
+          initialPrompt();
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
+};
+
+const deleteEmployee = () => {
+  trackerDatabase.query(`SELECT * FROM employee`, (err, employeeRes) => {
+    if (err) throw err;
+    const deleteEmployeeArr = [];
+    res.forEach(({ first_name, last_name, id }) => {
+      deleteEmployeeArr.push({
+        name: first_name + " " + last_name,
+        value: id,
+      });
+    });
+
+    let deleteEmployeeQuestions = [
+      {
+        type: "list",
+        name: "id",
+        choices: deleteEmployeeArr,
+        message: "Which employee do you want to delete?",
+      },
+    ];
+
+    inquirer
+      .prompt(deleteEmployeeQuestions)
+      .then((deleteEmployeeRes) => {
+        const deleteEmployeeQuery = `DELETE FROM employee WHERE id = ?`;
+        trackerDatabase.query(deleteEmployeeQuery, [deleteEmployeeRes.id], (err, res) => {
+            if (err) throw err;
+            console.log(`Employee deleted`);
+            initialPrompt();
+          }
+        );
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  });
+};
