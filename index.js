@@ -189,6 +189,7 @@ const addRole = () => {
       {
         type: "list",
         name: "department",
+        loop: false,
         choices: departmentsArr,
         message: "What department is the new role in?",
       },
@@ -254,12 +255,14 @@ const addEmployee = () => {
         {
           type: "list",
           name: "role_id",
+          loop: false,
           choices: roleOptions,
           message: "What is the employee's role?",
         },
         {
           type: "list",
           name: "manager_id",
+          loop: false,
           choices: employeeOptions,
           message: "Who is the employee's manager?",
         },
@@ -312,12 +315,14 @@ const updateRole = () => {
         {
           type: "list",
           name: "id",
+          loop: false,
           choices: employeeArr,
           message: "Whose role do you want to update?",
         },
         {
           type: "list",
           name: "role_id",
+          loop: false,
           choices: updateRoleArr,
           message: "What is the employee's new role?",
         },
@@ -360,6 +365,7 @@ const deleteDepartment = () => {
       {
         type: "list",
         name: "id",
+        loop: false,
         choices: deleteDepartmentArr,
         message: "Which department do you want to delete?"
       }
@@ -395,6 +401,7 @@ const deleteRole = () => {
       {
         type: "list",
         name: "role_id",
+        loop: false,
         choices: deleteRoleArr,
         message: "What role do you want to delete?",
       },
@@ -438,6 +445,7 @@ const deleteEmployee = () => {
       {
         type: "list",
         name: "id",
+        loop: false,
         choices: deleteEmployeeArr,
         message: "Which employee do you want to delete?",
       },
@@ -476,6 +484,7 @@ const viewDepartmentBudget = () => {
       {
         type: "list",
         name: "id",
+        loop: false,
         choices: departmentBudgetArr,
         message: "Which department's total utilized budget would you like to view?",
       },
