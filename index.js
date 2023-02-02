@@ -338,7 +338,7 @@ const updateRole = () => {
 
 const deleteDepartment = () => {
   const deleteDepartmentArr = [];
-  connection.query(`SELECT * FROM department`, (err, departmentRes) => {
+  trackerDatabase.query(`SELECT * FROM department`, (err, departmentRes) => {
     if (err) throw err;
     departmentRes.forEach((department) => {
       let deleteDepartmentObj = {
@@ -360,7 +360,7 @@ const deleteDepartment = () => {
       .prompt(deleteDepartmentQuestion)
       .then((deleteDepartmentRes) => {
         const deleteDepartmentQuery = `DELETE FROM DEPARTMENT WHERE id = ?`;
-        connection.query(
+        trackerDatabase.query(
           deleteDepartmentQuery,
           [deleteDepartmentRes.id],
           (err, res) => {
