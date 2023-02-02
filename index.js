@@ -342,7 +342,7 @@ const deleteDepartment = () => {
     if (err) throw err;
     departmentRes.forEach((department) => {
       let deleteDepartmentObj = {
-        name: department.name,
+        name: department.department_name,
         value: department.id,
       };
       deleteDepartmentArr.push(deleteDepartmentObj);
@@ -366,7 +366,7 @@ const deleteDepartment = () => {
           (err, res) => {
             if (err) throw err;
             console.log("Department deleted");
-            startPrompt();
+            initialPrompt();
           }
         );
       })
