@@ -427,7 +427,7 @@ const deleteEmployee = () => {
   trackerDatabase.query(`SELECT * FROM employee`, (err, employeeRes) => {
     if (err) throw err;
     const deleteEmployeeArr = [];
-    res.forEach(({ first_name, last_name, id }) => {
+    employeeRes.forEach(({ first_name, last_name, id }) => {
       deleteEmployeeArr.push({
         name: first_name + " " + last_name,
         value: id,
