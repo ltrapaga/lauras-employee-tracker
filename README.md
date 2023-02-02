@@ -22,13 +22,15 @@
 
 ## Usage
 
- To use this application:
+  To use this application:
 
 * Git clone this repository and run "npm i"
 * Run "mysql -u root -p"
 * Copy the mysql password from line 11 of the index.js file, paste it to the terminal, and press enter
 * Run "source db/schema.sql", then "source db/seeds.sql", and then exit mysql by running "exit;"
 * Run "npm start"
+
+  Please visit <https://drive.google.com/file/d/1at1Elhkawi3LO8D93Wu9ZMADiqGxFWrJ/view> to view a video of the typical user flow through the application.
   
 ## Contributions
 
